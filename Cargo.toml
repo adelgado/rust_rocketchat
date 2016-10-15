@@ -1,0 +1,7 @@
+[package]
+name = "rust_rocketchat"
+version = "0.1.0"
+authors = ["Alessandro Delgado <adelgado1313@gmail.com>"]
+
+[dependencies]
+hyper = "0.9"
