@@ -2,9 +2,8 @@ extern crate hyper;
 extern crate clap;
 
 use hyper::*;
-use std::io;
 use std::io::Read;
-use clap::{Arg, App, SubCommand};
+use clap::{Arg, App};
 
 
 // fn get_api_endpoint(server_url: String) {
