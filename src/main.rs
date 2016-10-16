@@ -6,7 +6,7 @@ use std::io::Read;
 use clap::{Arg, App};
 
 fn get_api_endpoint(server_url: &str, method: &str) -> String {
-    return server_url.to_string() + "/api/" + method;
+    return server_url.to_string() + "api/" + method;
 }
 
 struct ChatClient {
