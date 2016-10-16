@@ -97,6 +97,15 @@ impl ChatClient {
         println!("{}", s);
     }
 
+    // fn logout(&self) {
+
+    // }
+
+    // fn send(&self, room_name: &str, message: &str) {
+        
+    // }
+
+}
 
 fn main() {
     let matches =
