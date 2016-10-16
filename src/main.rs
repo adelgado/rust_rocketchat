@@ -1,13 +1,12 @@
 //#![feature(custom_derive, plugin)]
 //#![plugin(serde_macros)]
 
-extern crate hyper;
+#[macro_use] extern crate hyper;
 extern crate clap;
 extern crate serde_json;
 
 use hyper::*;
 use hyper::header::{Headers, ContentType};
-use hyper::mime::{Mime, TopLevel, SubLevel};
 use std::io::Read;
 use clap::{Arg, App};
 use serde_json::Value;
@@ -36,9 +35,10 @@ impl ChatClient {
     }
 
     fn get_api_version(&self) {
+        let endpoint = get_api_endpoint(&self.url, "version");
+
         let client = Client::new();
-        let version_endpoint = get_api_endpoint(&self.url, "version");
-        let mut res = client.get(&version_endpoint).send().unwrap();
+        let mut res = client.get(&endpoint).send().unwrap();
         assert_eq!(res.status, hyper::Ok);
         let mut s = String::new();
         res.read_to_string(&mut s).unwrap();
@@ -46,20 +46,19 @@ impl ChatClient {
     }
 
     fn login(&self) -> ChatAuth {
-        let client = Client::new();
-        let login_endpoint = get_api_endpoint(&self.url, "login");
-        println!("{}", login_endpoint);
-        let body = format!("user={}&password={}", self.username, self.password);
-        println!("{}", body);
+        let endpoint = get_api_endpoint(&self.url, "login");
 
+        let client = Client::new();
+        let body = format!("user={}&password={}", self.username, self.password);
         let mut headers = Headers::new();
         headers.set(ContentType::form_url_encoded());
-        let mut res = client.post(&login_endpoint)
+        let mut res = client.post(&endpoint)
             .headers(headers)
             .body(&body).send().unwrap();
         assert_eq!(res.status, hyper::Ok);
         let mut response_content = String::new();
         res.read_to_string(&mut response_content).unwrap();
+        println!("{}", response_content);
 
         let response_json: Value =
             serde_json::from_str(&response_content).unwrap();
@@ -67,12 +66,35 @@ impl ChatClient {
         let data = response_json.as_object().unwrap()
             .get("data").unwrap()
             .as_object().unwrap();
-
+         
         return ChatAuth {
-            auth_token: data.get("authToken").unwrap().to_string(),
-            user_id: data.get("userId").unwrap().to_string(),
+            auth_token: String::from(data.get("authToken").unwrap().to_string().trim_matches('"')),
+            user_id: String::from(data.get("userId").unwrap().to_string().trim_matches('"')),
         };
 
+    }
+
+    fn get_public_rooms(&self) {
+        let endpoint = get_api_endpoint(&self.url, "publicRooms");
+        let chat_auth = self.login();
+        let client = Client::new();
+
+        header! { (XAuthToken, "X-Auth-Token") => [String] }
+        header! { (XUserId, "X-User-Id") => [String] }
+
+        let mut headers = Headers::new();
+        headers.set(XAuthToken(chat_auth.auth_token.to_string().to_owned()));
+        headers.set(XUserId(chat_auth.user_id.to_string().to_owned()));
+
+        println!("{}", headers);
+
+        let mut res = client.get(&endpoint)
+            .headers(headers)
+            .send()
+            .unwrap();
+        let mut s = String::new();
+        res.read_to_string(&mut s).unwrap();
+        println!("{}", s);
     }
 
 
@@ -103,6 +125,6 @@ fn main() {
     client.display_config();
     client.get_api_version();
     client.login();
-
+    client.get_public_rooms();
 
 }
